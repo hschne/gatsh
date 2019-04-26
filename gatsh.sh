@@ -21,13 +21,13 @@ inline_sourced() {
   local root="$1"
   local contents="$2"
   local sources
-  # TODO: Try to replace sed and friends with pure bash
   sources=$(echo "$contents" | grep -e 'source\s')
   [ -z "$sources" ] && { echo "$contents"; return; }
   local sourced_contents
   while read -r line; do
     sourced_contents=$(load_sourced_files "$root" "$line")
     contents=${contents/"$line"/"$sourced_contents"}
+    # TODO: Instead op just nuking duplicate imports in same file warn the user, or allow that?
     contents=${contents//"$line"}
   done <<< "$sources"
   echo "$contents"
