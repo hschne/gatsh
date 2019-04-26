@@ -1,4 +1,4 @@
 #! /usr/bin/env bash
 
-source "./lib.sh" "lib2.sh"
+source ./lib.sh
 main
