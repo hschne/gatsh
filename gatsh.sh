@@ -80,6 +80,7 @@ clean_source(){
   source="${source#\'}"
 }
 
+echo "bla"
 [[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"
 
 
