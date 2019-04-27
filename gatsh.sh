@@ -80,7 +80,10 @@ clean_source(){
   source="${source#\'}"
 }
 
-echo "bla"
-[[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@"
+test() {
+  echo "bla"
+}
 
-
+if [ "${BASH_SOURCE[0]}" == "$0" ]; then
+  main "$@"
+fi
