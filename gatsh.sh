@@ -1,11 +1,76 @@
 #!/usr/bin/env bash
 
+# TODO: Fix the fact that everything is a subshell and writing to a global array won't work
+# TODO: Make script more robust by using set -e and friends
 declare -a __gatsh__imported_paths=()
 
 main() {
+  parse_args "$@"
+  # TODO: Try to minimize dependencies: sed, grep, cat, see bash bible
   local root
-  root=$(realpath "$1")
-  load_file "$root" 
+  root=$(realpath "$INPUT")
+  result=$(load_file "$root")
+  if [[ -z "$OUTPUT" ]]; then 
+    echo "$result" 
+  else 
+    echo "$result" > "$OUTPUT"
+  fi
+}
+
+parse_args() {
+  local positional=()
+  while [[ $# -gt 0 ]]
+  do
+    key="$1"
+    case $key in
+      -o|--output)
+        [[ $# -lt 2 ]] && die "Missing value for optional argument '$key'" 1
+        OUTPUT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+      -h|--help)
+        help && exit 0
+        ;;
+      *)    # unknown option
+        positional+=("$1") # save it in an array for later
+        shift # past argument
+        ;;
+    esac
+  done
+  set -- "${positional[@]}" # restore positional parameters
+
+  if [[ ${#positional[@]} -ne 1 ]]; then
+     HELP=1
+     die "Missing value for non-optional argument 'file'" 1 
+  fi
+  INPUT=$1
+  
+  validate_args 
+}
+
+validate_args() {
+  if [[ ! -f "$INPUT" ]]; then die "The file '$INPUT' does not exist!" 1; fi
+}
+
+die() {
+  local exit_code=$2
+  [[ -n "$exit_code" ]] || exit_code=1
+  [[ "$HELP" = 1 ]] && help >&2
+  echo "$1" >&2
+  exit ${exit_code}
+}
+
+help() {
+  cat <<EOF
+Usage: gatsh [option]... <file>
+
+Recursively concatinate scripts referenced in file to standard output. 
+
+Examples: 
+  gatsh main.sh
+
+EOF
 }
 
 load_file() {
@@ -18,16 +83,16 @@ load_file() {
 }
 
 inline_sourced() {
+  # TODO: Rip this apart so its more testable
   local root="$1"
   local contents="$2"
   local sources
-  sources=$(echo "$contents" | grep -e 'source\s')
+  sources=$(echo "$contents" | grep -e '^\w*source\s.*' -e '^\w*\.\s.*')
   [ -z "$sources" ] && { echo "$contents"; return; }
   local sourced_contents
   while read -r line; do
     sourced_contents=$(load_sourced_files "$root" "$line")
     contents=${contents/"$line"/"$sourced_contents"}
-    # TODO: Instead op just nuking duplicate imports in same file warn the user, or allow that?
     contents=${contents//"$line"}
   done <<< "$sources"
   echo "$contents"
@@ -80,9 +145,6 @@ clean_source(){
   source="${source#\'}"
 }
 
-test() {
-  echo "bla"
-}
 
 if [ "${BASH_SOURCE[0]}" == "$0" ]; then
   main "$@"

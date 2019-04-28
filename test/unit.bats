@@ -8,6 +8,39 @@ setup() {
   source "$BATS_TEST_DIRNAME/../gatsh.sh"
 }
 
+@test "parse_args with existing input file should set INPUT" {
+  file=$(mktemp)
+  parse_args "$file"
+
+  assert_equal "$INPUT" "$file"
+}
+
+@test "parse_args with nonexisting input file should print error" {
+  run parse_args invalid_file
+
+  assert_output "The file 'invalid_file' does not exist!"
+}
+
+@test "parse_args with output should set OUTPUT" {
+  file=$(mktemp)
+  parse_args -o output_file "$file"
+
+  assert_equal "$OUTPUT" output_file
+}
+
+@test "parse_args with optional output missing should print error" {
+  file=$(mktemp)
+  run parse_args -o
+
+  assert_output "Missing value for optional argument '-o'"
+}
+
+@test "parse_args with help prints usage" {
+  run parse_args -h
+
+  assert_output --partial "Usage: gatsh"
+}
+
 @test "clean_source should remove double quotes" {
   source="\"lib1.sh\""
 

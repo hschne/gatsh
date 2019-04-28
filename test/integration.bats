@@ -9,12 +9,10 @@ setup() {
   test_files="$BATS_TEST_DIRNAME/files"
 }
 
-@test "clean_source should remove double quotes" {
-  result=$("$gatsh" "$test_files/main.sh")
+@test "running gatsh on main should concatinate sourced files" {
+  run "$gatsh" "$test_files/main.sh"
+  expected=$(<"$test_files/main_gatshified.sh")
 
-  expected='#! /usr/bin/env bash/n/n echo "lib1"'
-
-
-  assert_equal "$result" "$expected"
+  assert_output "$expected"
 }
 
