@@ -1,5 +1,5 @@
 <h1 align="center">Gatsh</h1> 
-<p align="center">Recursively concatine a script and all its requirements into a single file.</p>
+<p align="center">Recursively inline files required by your scripts</p>
 
 <p align="center">
 <a href="https://forthebadge.com"><img src="https://forthebadge.com/images/badges/built-with-science.svg"></a>
@@ -10,7 +10,7 @@
 
 ## What is this? 
 
-Gatsh parses your script files for references to other scripts and inlines them. The idea is to allow people to write shell scripts using multiple files while still giving them the possibility to distribute a single file. 
+Gatsh parses your script files for references to other scripts and inlines the contents of those. The idea is to allow people to split their shell scripts into multiple files while still giving them the possibility to distribute a single file. 
 
 An example says more than 1000 words. Let's say you have a file that references a bunch of other files: 
 
