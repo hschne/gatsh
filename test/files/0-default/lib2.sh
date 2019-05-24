@@ -2,4 +2,4 @@
 
 echo "lib2"
 
-source "lib3.sh"
+source lib3.sh

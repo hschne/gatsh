@@ -71,12 +71,14 @@ git submodule init
 git submodule update
 ```
 
-Make sure that bats is installed and execute
+Bats features both system tests, which verify that the whole script works, and unit tests, which verify specific functions. You can run both using
 
 ```bash
 bats test/gatsh.bats # System tests, use test files
 bats test/unit.bats # Individual function tests
 ```
+
+System tests rely on a number of files that can be found in `tests/files`.
 
 
 ## License

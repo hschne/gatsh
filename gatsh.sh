@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-# TODO: Fix the fact that everything is a subshell and writing to a global array won't work
-# TODO: Make script more robust by using set -e and friends
-declare -a __gatsh__imported_paths=()
+# TODO: Make script more robust by using set -e and friendsa
+INPUT=""
+TEMPFILE=""
 
 main() {
   parse_args "$@"
   # TODO: Try to minimize dependencies: sed, grep, cat, see bash bible
+  TEMPFILE=$(mktemp "/tmp/gatsh.XXXXXXX")
   local root
   root=$(realpath "$INPUT")
   result=$(load_file "$root")
@@ -49,6 +50,7 @@ parse_args() {
   validate_args 
 }
 
+
 validate_args() {
   if [[ ! -f "$INPUT" ]]; then die "The file '$INPUT' does not exist!" 1; fi
 }
@@ -74,24 +76,28 @@ EOF
 }
 
 load_file() {
-  local root="$1"
-  __gatsh__imported_paths+=("$root")
+  local file="$1"
+  echo "$file" >> "$TEMPFILE"
   local contents
-  contents=$(cat "$root") 
-  contents=$(inline_sourced "$root" "$contents")
+  contents=$(cat "$file") 
+  contents=$(inline_sourced "$file" "$contents")
   echo "$contents"
 }
 
 inline_sourced() {
-  # TODO: Rip this apart so its more testable
+  # TODO: Rip this apart so its more testable, then make sure grep matches all patterns
   local root="$1"
   local contents="$2"
   local sources
+  # Get all lines where other files are sourced. If no such lines occur we can return this
+  # files contents as is, because there is nothing to inline.
   sources=$(echo "$contents" | grep -e '^\w*source\s.*' -e '^\w*\.\s.*')
   [ -z "$sources" ] && { echo "$contents"; return; }
   local sourced_contents
   while read -r line; do
     sourced_contents=$(load_sourced_files "$root" "$line")
+    # Replace the source line with the contents of the sourced files. Remove all other occurences of 
+    # that line as well, because there's no need to process them 
     contents=${contents/"$line"/"$sourced_contents"}
     contents=${contents//"$line"}
   done <<< "$sources"
@@ -99,9 +105,11 @@ inline_sourced() {
 }
 
 load_sourced_files() {
+  # TODO: Rip this apart so its more testable, then make sure grep matches all patterns
   local root="$1"
   local source_line="$2"
   local sources
+  # Get all files that occur within a single source statement, e.g. source lib1 lib2 yields lib1, lib2
   sources=$(echo "$source_line" \
     | cut -d' ' -f2- \
     | tr ' ' '\n')
@@ -109,7 +117,10 @@ load_sourced_files() {
   local content
   while read -r source; do
     sourced_path=$(get_sourced_path "$root" "$source")
-    [[ ${__gatsh__imported_paths[*]} == *"$sourced_path"* ]] && continue
+    # Check that the file being imported was not already imported
+    readarray imported_files < "$TEMPFILE"
+    [[ ${imported_files[*]} == *"$sourced_path"* ]] && continue
+    # TODO: Check & warn if that file does not exist
     content=$(load_file "$sourced_path")
     # Sanitize content: Remove shebang and leading/trailing newlines
     # See https://stackoverflow.com/a/7359879/2553104 and https://stackoverflow.com/a/1935132/2553104
@@ -122,11 +133,11 @@ load_sourced_files() {
 # Resolve a given source to an absolute path
 # 
 # Parameters: 
-#   $1 - The file from which requires the source. Must exist. 
+#   $1 - The file from which requires the source. Must be in an existing directory
 #   $2 - The path to the sourced file
 # 
 # Examples
-#   parse_source_file /opt/main.sh ../lib1 
+#   get_sourced_path main.sh ../lib1 
 # 
 get_sourced_path() {
   local root="$1"
@@ -144,7 +155,6 @@ clean_source(){
   source="${source%\'}"
   source="${source#\'}"
 }
-
 
 if [ "${BASH_SOURCE[0]}" == "$0" ]; then
   main "$@"
