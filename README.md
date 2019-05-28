@@ -12,7 +12,7 @@
 
 Gatsh parses your script files for references to other scripts and inlines the contents of those. The idea is to allow people to split their shell scripts into multiple files while still giving them the possibility to distribute a single file. 
 
-An example says more than 1000 words. Let's say you have a file that references a bunch of other files: 
+Let's say you have a file that references a bunch of other files: 
 
 ```bash
 # root.sh
@@ -52,11 +52,28 @@ log "Hello World!"
 
 ## Installation
 
-TODO
+Download the latest version from Gatsh from the releases page or get the latest version. 
+
+```
+wget https://raw.githubusercontent.com/hschne/gatsh/master/gatsh && chmod +x gatsh
+```
+
+Add Gatsh to your path to make it available from any location.
 
 ## Usage
 
-TODO:
+Usage is straight forward - simply run
+
+```
+gatsh infile.sh
+```
+
+to concatinate `infile.sh` and all its dependencies. Gatsh supports the following options:
+
+```
+-o|--outfile  Redirects the output to the specified file
+-h|--help     Displays the help dialog
+```
 
 ## Development
 

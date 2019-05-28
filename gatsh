@@ -77,6 +77,7 @@ Recursively concatinate scripts referenced in file to standard output.
 
 Options: 
   -o|--outfile  Redirects the output to the specified file
+  -h|--help     Displays the usage information
 
 Examples: 
   gatsh main.sh
