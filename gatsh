@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# set -eo pipefail
+set -eo pipefail
 
 INPUT=""
 OUTFILE=""
@@ -95,7 +95,6 @@ load_file() {
 }
 
 inline_sourced() {
-  # TODO: Rip this apart so its more testable, then make sure grep matches all patterns
   local root="$1"
   local contents="$2"
   local sources
@@ -115,7 +114,6 @@ inline_sourced() {
 }
 
 load_sourced_files() {
-  # TODO: Rip this apart so its more testable, then make sure grep matches all patterns
   local root="$1"
   local source_line="$2"
   local sources
