@@ -5,7 +5,7 @@ load 'test_helper/bats-assert/load'
 
 setup() {
   # shellcheck source=.
-  gatsh="$BATS_TEST_DIRNAME/../gatsh.sh"
+  gatsh="$BATS_TEST_DIRNAME/../gatsh"
   test_files="$BATS_TEST_DIRNAME/files"
 }
 

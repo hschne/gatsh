@@ -5,7 +5,7 @@ load 'test_helper/bats-assert/load'
 
 setup() {
   # shellcheck source=.
-  source "$BATS_TEST_DIRNAME/../gatsh.sh"
+  source "$BATS_TEST_DIRNAME/../gatsh"
 }
 
 @test "parse_args with existing input file should set INPUT" {

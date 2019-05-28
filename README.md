@@ -12,7 +12,7 @@
 
 Gatsh parses your script files for references to other scripts and inlines the contents of those. The idea is to allow people to split their shell scripts into multiple files while still giving them the possibility to distribute a single file. 
 
-Let's say you have a file that references a bunch of other files: 
+Let's say you have a file `root.sh` that references a bunch of other files like `logger.sh` and `colors.sh`: 
 
 ```bash
 # root.sh
@@ -65,7 +65,7 @@ Add Gatsh to your path to make it available from any location.
 Usage is straight forward - simply run
 
 ```
-gatsh infile.sh
+gatsh infile.sh > infile_gatsh.sh
 ```
 
 to concatinate `infile.sh` and all its dependencies. Gatsh supports the following options:
@@ -96,7 +96,6 @@ bats test/unit.bats # Individual function tests
 ```
 
 System tests rely on a number of files that can be found in `tests/files`.
-
 
 ## License
 

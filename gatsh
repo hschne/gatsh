@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+# set -eo pipefail
 
 INPUT=""
 OUTFILE=""
 TEMPFILE=""
 
-main() {
+gatsh() {
   parse_args "$@"
   # TODO: Try to minimize dependencies: sed, grep, cat, see bash bible
   TEMPFILE=$(mktemp "/tmp/gatsh.XXXXXXX")
@@ -187,5 +187,7 @@ handle_exit() {
 trap handle_exit ERR
 
 if [ "${BASH_SOURCE[0]}" == "$0" ]; then
-  main "$@"
+  gatsh "$@"
+else 
+  export -f gatsh
 fi
