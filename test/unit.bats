@@ -25,16 +25,31 @@ setup() {
   file=$(mktemp)
   parse_args -o output_file "$file"
 
-  assert_equal "$OUTPUT" output_file
+  assert_equal "$OUTFILE" output_file
 }
 
 @test "parse_args with optional output missing should print error" {
-  file=$(mktemp)
   run parse_args -o
 
   assert_output "Missing value for optional argument '-o'"
 }
 
+@test "parse_args with output but invalid file should show error" {
+  file=$(mktemp)
+  run parse_args -o "/invalid/outfile.sh" "$file"
+
+  assert_output --partial "Invalid output file"
+}
+
+@test "get_individual_sources should seperate files" {
+  run get_individual_sources "source lib1 lib2 lib3"
+
+  assert_output <<EOF
+lib1
+lib2
+lib3
+EOF
+}
 @test "parse_args with help prints usage" {
   run parse_args -h
 

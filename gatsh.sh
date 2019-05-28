@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# TODO: Make script more robust by using set -e and friendsa
+set -eo pipefail
+
 INPUT=""
+OUTFILE=""
 TEMPFILE=""
 
 main() {
@@ -11,10 +13,10 @@ main() {
   local root
   root=$(realpath "$INPUT")
   result=$(load_file "$root")
-  if [[ -z "$OUTPUT" ]]; then 
+  if [[ -z "$OUTFILE" ]]; then 
     echo "$result" 
   else 
-    echo "$result" > "$OUTPUT"
+    echo "$result" > "$OUTFILE"
   fi
 }
 
@@ -24,35 +26,39 @@ parse_args() {
   do
     key="$1"
     case $key in
-      -o|--output)
+      -o|--outfile)
         [[ $# -lt 2 ]] && die "Missing value for optional argument '$key'" 1
-        OUTPUT="$2"
-        shift # past argument
-        shift # past value
+        OUTFILE="$2"
+        shift
+        shift
         ;;
       -h|--help)
         help && exit 0
         ;;
-      *)    # unknown option
-        positional+=("$1") # save it in an array for later
-        shift # past argument
+      *)
+        positional+=("$1")
+        shift
         ;;
     esac
   done
-  set -- "${positional[@]}" # restore positional parameters
+  set -- "${positional[@]}"
 
   if [[ ${#positional[@]} -ne 1 ]]; then
      HELP=1
-     die "Missing value for non-optional argument 'file'" 1 
+     die "Missing value for non-optional argument 'file'" 1
   fi
   INPUT=$1
+  if [[ ! -f "$INPUT" ]]; then die "The file '$INPUT' does not exist!" 0; fi
   
-  validate_args 
+  validate_options
 }
 
-
-validate_args() {
-  if [[ ! -f "$INPUT" ]]; then die "The file '$INPUT' does not exist!" 1; fi
+validate_options() {
+  if [[ -n "$OUTFILE" ]]; then 
+    local directory=
+    directory=$(dirname "$OUTFILE")
+    if [[ ! -d "$directory" ]]; then  die "Invalid output file '$OUTFILE'. Directory '$directory' does not exist" 1; fi
+  fi
 }
 
 die() {
@@ -65,9 +71,12 @@ die() {
 
 help() {
   cat <<EOF
-Usage: gatsh [option]... <file>
+Usage: gatsh [OPTIONS] <file>
 
 Recursively concatinate scripts referenced in file to standard output. 
+
+Options: 
+  -o|--outfile  Redirects the output to the specified file
 
 Examples: 
   gatsh main.sh
@@ -109,25 +118,38 @@ load_sourced_files() {
   local root="$1"
   local source_line="$2"
   local sources
-  # Get all files that occur within a single source statement, e.g. source lib1 lib2 yields lib1, lib2
-  sources=$(echo "$source_line" \
-    | cut -d' ' -f2- \
-    | tr ' ' '\n')
+  sources=$(get_individual_sources "$source_line")
   local sources_contents=()
   local content
   while read -r source; do
     sourced_path=$(get_sourced_path "$root" "$source")
-    # Check that the file being imported was not already imported
+    # Check that the file being imported was not already imported, if it was just skip
     readarray imported_files < "$TEMPFILE"
     [[ ${imported_files[*]} == *"$sourced_path"* ]] && continue
-    # TODO: Check & warn if that file does not exist
+    
+    # If the source does not exists we need to exit, because nothing good will come of this
+    [[ ! -f "$sourced_path" ]] && die "ERROR: Failed to parse '$root'. The source file $source does not exist" 0
+      
     content=$(load_file "$sourced_path")
+
     # Sanitize content: Remove shebang and leading/trailing newlines
     # See https://stackoverflow.com/a/7359879/2553104 and https://stackoverflow.com/a/1935132/2553104
     content=$(echo "$content" | sed '/^#!/d' | sed -e :a -e '/./,$!d;/^\n*$/{$d;N;};/\n$/ba' )
     sources_contents+=("$content")
   done <<< "$sources"
   echo "${sources_contents[*]}"
+}
+
+# Get all files that occur within a single source statement.
+#
+# Example: 
+# get_individual_sources lib1 lib2 yields lib1, lib2
+
+get_individual_sources() {
+  source_line="$1"
+  echo "$source_line" \
+    | cut -d' ' -f2- \
+    | tr ' ' '\n'
 }
 
 # Resolve a given source to an absolute path
@@ -149,12 +171,19 @@ get_sourced_path() {
   echo "$source_path"
 }
 
+# Remove superfluous quotes from the given source
 clean_source(){
   source="${source%\"}"
   source="${source#\"}"
   source="${source%\'}"
   source="${source#\'}"
 }
+
+handle_exit() {
+  [[ -f "$TEMPFILE" ]] && rm "$TEMPFILE"
+}
+
+trap handle_exit ERR
 
 if [ "${BASH_SOURCE[0]}" == "$0" ]; then
   main "$@"
